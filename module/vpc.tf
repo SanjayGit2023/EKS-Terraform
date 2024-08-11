@@ -11,7 +11,6 @@ resource "aws_vpc" "vpc" {
   tags = {
     Name = var.vpc-name
     Env  = var.env
-
   }
 }
 
@@ -28,7 +27,7 @@ resource "aws_internet_gateway" "igw" {
 }
 
 resource "aws_subnet" "public-subnet" {
-  count                   = var.pub-subnet-count
+  count                   = 2
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = element(var.pub-cidr-block, count.index)
   availability_zone       = element(var.pub-availability-zone, count.index)
@@ -41,12 +40,11 @@ resource "aws_subnet" "public-subnet" {
     "kubernetes.io/role/elb"                      = "1"
   }
 
-  depends_on = [aws_vpc.vpc,
-  ]
+  depends_on = [aws_vpc.vpc]
 }
 
 resource "aws_subnet" "private-subnet" {
-  count                   = var.pri-subnet-count
+  count                   = 2
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = element(var.pri-cidr-block, count.index)
   availability_zone       = element(var.pri-availability-zone, count.index)
@@ -59,10 +57,8 @@ resource "aws_subnet" "private-subnet" {
     "kubernetes.io/role/internal-elb"             = "1"
   }
 
-  depends_on = [aws_vpc.vpc,
-  ]
+  depends_on = [aws_vpc.vpc]
 }
-
 
 resource "aws_route_table" "public-rt" {
   vpc_id = aws_vpc.vpc.id
@@ -77,18 +73,15 @@ resource "aws_route_table" "public-rt" {
     env  = var.env
   }
 
-  depends_on = [aws_vpc.vpc
-  ]
+  depends_on = [aws_vpc.vpc]
 }
 
-resource "aws_route_table_association" "name" {
-  count          = 3
+resource "aws_route_table_association" "public-rt-association" {
+  count          = 2
   route_table_id = aws_route_table.public-rt.id
   subnet_id      = aws_subnet.public-subnet[count.index].id
 
-  depends_on = [aws_vpc.vpc,
-    aws_subnet.public-subnet
-  ]
+  depends_on = [aws_vpc.vpc, aws_subnet.public-subnet]
 }
 
 resource "aws_eip" "ngw-eip" {
@@ -98,9 +91,7 @@ resource "aws_eip" "ngw-eip" {
     Name = var.eip-name
   }
 
-  depends_on = [aws_vpc.vpc
-  ]
-
+  depends_on = [aws_vpc.vpc]
 }
 
 resource "aws_nat_gateway" "ngw" {
@@ -111,9 +102,7 @@ resource "aws_nat_gateway" "ngw" {
     Name = var.ngw-name
   }
 
-  depends_on = [aws_vpc.vpc,
-    aws_eip.ngw-eip
-  ]
+  depends_on = [aws_vpc.vpc, aws_eip.ngw-eip]
 }
 
 resource "aws_route_table" "private-rt" {
@@ -129,18 +118,15 @@ resource "aws_route_table" "private-rt" {
     env  = var.env
   }
 
-  depends_on = [aws_vpc.vpc,
-  ]
+  depends_on = [aws_vpc.vpc]
 }
 
 resource "aws_route_table_association" "private-rt-association" {
-  count          = 3
+  count          = 2
   route_table_id = aws_route_table.private-rt.id
   subnet_id      = aws_subnet.private-subnet[count.index].id
 
-  depends_on = [aws_vpc.vpc,
-    aws_subnet.private-subnet
-  ]
+  depends_on = [aws_vpc.vpc, aws_subnet.private-subnet]
 }
 
 resource "aws_security_group" "eks-cluster-sg" {
