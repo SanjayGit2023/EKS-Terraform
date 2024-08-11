@@ -1,5 +1,4 @@
 resource "aws_eks_cluster" "eks" {
-
   count    = var.is-eks-cluster-enabled == true ? 1 : 0
   name     = var.cluster-name
   role_arn = aws_iam_role.eks-cluster-role[count.index].arn
@@ -11,7 +10,6 @@ resource "aws_eks_cluster" "eks" {
     endpoint_public_access  = var.endpoint-public-access
     security_group_ids      = [aws_security_group.eks-cluster-sg.id]
   }
-
 
   access_config {
     authentication_mode                         = "CONFIG_MAP"
@@ -30,7 +28,6 @@ resource "aws_iam_openid_connect_provider" "eks-oidc" {
   thumbprint_list = [data.tls_certificate.eks-certificate.certificates[0].sha1_fingerprint]
   url             = data.tls_certificate.eks-certificate.url
 }
-
 
 # AddOns for EKS Cluster
 resource "aws_eks_addon" "eks-addons" {
@@ -57,7 +54,6 @@ resource "aws_eks_node_group" "ondemand-node" {
     min_size     = var.min_capacity_on_demand
     max_size     = var.max_capacity_on_demand
   }
-
 
   subnet_ids = [aws_subnet.private-subnet[0].id, aws_subnet.private-subnet[1].id]
 
@@ -89,8 +85,7 @@ resource "aws_eks_node_group" "spot-node" {
     max_size     = var.max_capacity_spot
   }
 
-
-  subnet_ids = [aws_subnet.private-subnet[0].id, aws_subnet.private-subnet[1].id, aws_subnet.private-subnet[2].id]
+  subnet_ids = [aws_subnet.private-subnet[0].id, aws_subnet.private-subnet[1].id]
 
   instance_types = var.spot_instance_types
   capacity_type  = "SPOT"
